@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FAFDFC">
+<meta name="description" content="按科目与考试范围，用 DeepSeek 即时生成选择题练习。">
+<meta property="og:site_name" content="DeepSeek Quiz">
+<meta name="apple-mobile-web-app-title" content="DeepSeek Quiz">
+<title>做题 · DeepSeek Quiz</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='28' fill='%2300696D'/%3E%3Cpath d='M26 30h34a10 10 0 0 1 10 10v30H36a10 10 0 0 1-10-10z' fill='none' stroke='%239CF0F4' stroke-width='6'/%3E%3Cpath d='M40 44h20M40 56h14' stroke='%239CF0F4' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  (function () {
+    var t;
+    try { t = localStorage.getItem('dsh-theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#0E1414' : '#FAFDFC');
+  })();
+</script>
+<link rel="stylesheet" href="assets/theme.css">
+<link rel="stylesheet" href="assets/quiz.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================ 首页 -->
+  <section class="view" id="view-home">
+    <header class="topbar">
+      <div class="topbar-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 4.5h9.5A2.5 2.5 0 0 1 17 7v13H7.5A2.5 2.5 0 0 1 5 17.5z"></path>
+          <path d="M17 8.5h2v11.5h-2"></path>
+          <path d="M8.5 9.5h5M8.5 13h5M8.5 16.5h3"></path>
+        </svg>
+        <span>做题</span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="切换深浅主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20.5 14.3A8.5 8.5 0 1 1 9.7 3.5a6.8 6.8 0 0 0 10.8 10.8Z"></path></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="API 配置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.4-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <main class="page">
+      <div class="hero">
+        <p class="eyebrow">DeepSeek 命题</p>
+        <h1 class="hero-title">今天练几道？</h1>
+        <p class="hero-sub">选好科目与范围，AI 即时出题，做完立刻判分。</p>
+
+        <div class="hero-actions">
+          <button class="btn btn--block" id="startBtn" type="button">
+            进入做题
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+          </button>
+          <button class="btn btn--tonal btn--block" id="statsBtn" type="button">查看统计</button>
+        </div>
+      </div>
+
+      <section class="summary" id="summary" aria-label="学习概览">
+        <div class="metric card">
+          <span class="metric-label">今日</span>
+          <span class="metric-value" id="todayQuestions">–</span>
+          <span class="metric-unit">题 · <span id="todayTokens">–</span> tokens</span>
+        </div>
+        <div class="metric card">
+          <span class="metric-label">本周</span>
+          <span class="metric-value" id="weekQuestions">–</span>
+          <span class="metric-unit">题 · <span id="weekTokens">–</span> tokens</span>
+        </div>
+        <div class="metric card">
+          <span class="metric-label">累计</span>
+          <span class="metric-value" id="totalQuestions">–</span>
+          <span class="metric-unit">题 · <span id="totalTokens">–</span> tokens</span>
+        </div>
+      </section>
+
+      <section class="detail" id="statsDetail" hidden>
+        <div class="section-head">
+          <h2 class="section-title">各科目</h2>
+          <button class="btn btn--text" id="statsRefresh" type="button">刷新</button>
+        </div>
+        <div class="table-wrap card">
+          <table class="stats-table">
+            <thead>
+              <tr><th>科目</th><th>今日</th><th>本周</th><th>累计</th><th>正确率</th></tr>
+            </thead>
+            <tbody id="subjectRows">
+              <tr><td colspan="5" class="empty">还没有做题记录</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="foot">统计按服务器时间（Asia/Shanghai）自然日与自然周（周一起算）计算，数据只记录题量与 token，不保存题目内容。</p>
+      </section>
+    </main>
+  </section>
+
+  <!-- ============================================================ 第一步：API -->
+  <section class="view" id="view-api" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-back="home" type="button" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <div class="topbar-title"><span>API 配置</span></div>
+      <div class="topbar-spacer"></div>
+      <span class="step-badge">1 / 2</span>
+    </header>
+
+    <main class="page">
+      <div class="field">
+        <label class="field-label" for="apiKey">DeepSeek API Key</label>
+        <input class="input" id="apiKey" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false">
+        <p class="field-hint">在 platform.deepseek.com 创建，仅用于本机与本站之间的调用。</p>
+      </div>
+
+      <div class="field">
+        <div class="row-between">
+          <span class="field-label">模型</span>
+          <button class="btn btn--text btn--small" id="loadModelsBtn" type="button">获取模型列表</button>
+        </div>
+        <select class="input" id="modelSelect">
+          <option value="deepseek-chat">deepseek-chat</option>
+          <option value="deepseek-reasoner">deepseek-reasoner</option>
+        </select>
+        <p class="field-hint" id="modelsHint">默认内置两个模型，可用 API Key 拉取账号可见的完整列表。</p>
+      </div>
+
+      <div class="switch-row card">
+        <div class="switch-text">
+          <span class="switch-title">深度思考</span>
+          <span class="switch-sub">开启后使用 deepseek-reasoner 推理模型，出题更慢但更难更严谨。</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="thinkingToggle">
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="card config-card">
+        <div class="field">
+          <label class="field-label" for="cfgPassword">配置密码</label>
+          <input class="input" id="cfgPassword" type="password" placeholder="至少 4 位，用于加密保存 / 读取配置" autocomplete="new-password">
+        </div>
+        <div class="row-gap">
+          <button class="btn btn--tonal" id="saveConfigBtn" type="button">保存配置</button>
+          <button class="btn btn--outline" id="loadConfigBtn" type="button">读取配置</button>
+        </div>
+        <p class="field-hint" id="configStatus">正在检查已保存的配置…</p>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--block" id="toExamBtn" type="button">
+          下一步
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============================================================ 第二步：科目与范围 -->
+  <section class="view" id="view-exam" hidden>
+    <header class="topbar">
+      <button class="icon-btn" data-back="api" type="button" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <div class="topbar-title"><span>科目与范围</span></div>
+      <div class="topbar-spacer"></div>
+      <span class="step-badge">2 / 2</span>
+    </header>
+
+    <main class="page">
+      <div class="field">
+        <span class="field-label">科目</span>
+        <div class="chips" id="subjectChips" role="radiogroup" aria-label="选择科目">
+          <button class="chip chip--choice" type="button" data-subject="英语" role="radio" aria-checked="false">英语</button>
+          <button class="chip chip--choice" type="button" data-subject="数学" role="radio" aria-checked="true">数学</button>
+          <button class="chip chip--choice" type="button" data-subject="物理" role="radio" aria-checked="false">物理</button>
+          <button class="chip chip--choice" type="button" data-subject="化学" role="radio" aria-checked="false">化学</button>
+          <button class="chip chip--choice" type="button" data-subject="生物" role="radio" aria-checked="false">生物</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="scopeInput">考试范围</label>
+        <textarea class="input textarea" id="scopeInput" rows="4" placeholder="用一句话描述，例如：人教版必修一 集合与函数，重点是单调性与奇偶性；难度接近高考中档题。"></textarea>
+        <p class="field-hint">自然语言即可，题目会严格围绕这段范围生成。</p>
+      </div>
+
+      <div class="field">
+        <div class="row-between">
+          <span class="field-label">预出题数量</span>
+          <span class="prefetch-value">提前备好 <b id="prefetchValue">3</b> 题</span>
+        </div>
+        <div class="stepper" role="group" aria-label="预出题数量">
+          <button class="step-btn" id="prefetchMinus" type="button" aria-label="减少预出题数量">−</button>
+          <input class="step-input" id="prefetchInput" type="number" min="0" max="10" step="1" value="3" inputmode="numeric" aria-label="预出题数量">
+          <button class="step-btn" id="prefetchPlus" type="button" aria-label="增加预出题数量">+</button>
+        </div>
+        <p class="field-hint">提前排队生成后面 N 道题，答完一题自动补一题；设为 0 则每题现生成。预出的题同样计入 token 消耗。</p>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--block" id="startQuizBtn" type="button">
+          开始做题
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============================================================ 做题页 -->
+  <section class="view" id="view-quiz" hidden>
+    <header class="topbar">
+      <div class="quiz-head">
+        <span class="chip chip--filled" id="quizSubject">数学</span>
+        <span class="quiz-count" id="quizCount">第 1 题</span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <label class="mini-switch" title="答题过程中随时开关预出题">
+        <span class="mini-label">预出</span>
+        <input type="checkbox" id="prefetchToggle" checked>
+        <span class="mini-track" aria-hidden="true"></span>
+      </label>
+      <button class="btn btn--outline btn--small" id="endBtn" type="button">结束</button>
+    </header>
+
+    <main class="page page--quiz">
+      <div class="quiz-loading card" id="quizLoading">
+        <span class="spinner" aria-hidden="true"></span>
+        <div>
+          <p class="loading-title">正在出题…</p>
+          <p class="loading-sub" id="loadingSub">AI 正在根据你的范围拟题，通常需要几秒</p>
+        </div>
+      </div>
+
+      <div class="quiz-error card" id="quizError" hidden>
+        <p class="error-title" id="errorTitle">出题失败</p>
+        <p class="error-text" id="errorText"></p>
+        <button class="btn btn--tonal" id="retryBtn" type="button">重试</button>
+      </div>
+
+      <div id="quizBody" hidden>
+        <div class="question-card card">
+          <div class="question-meta">
+            <span class="tag" id="typeTag">单选题</span>
+            <span class="tag tag--knowledge" id="knowledgeTag" hidden></span>
+            <span class="tag tag--ghost buffer-badge" id="bufferBadge" hidden></span>
+            <span class="tag tag--ghost" id="modelTag"></span>
+          </div>
+          <p class="stem" id="stemText"></p>
+        </div>
+
+        <div class="options" id="optionsList" role="group" aria-label="选项"></div>
+
+        <div class="actions actions--sticky">
+          <button class="btn btn--block" id="submitBtn" type="button" disabled>完成</button>
+        </div>
+
+        <div class="result" id="resultPanel" hidden>
+          <div class="result-head" id="resultHead">
+            <span class="result-icon" id="resultIcon" aria-hidden="true"></span>
+            <div>
+              <p class="result-title" id="resultTitle">回答正确</p>
+              <p class="result-sub" id="resultSub"></p>
+            </div>
+          </div>
+          <div class="explain" id="explanationBox">
+            <p class="explain-label">解析</p>
+            <p class="explain-text" id="explainText"></p>
+          </div>
+          <button class="btn btn--block" id="nextBtn" type="button">
+            下一题
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+          </button>
+        </div>
+      </div>
+    </main>
+  </section>
+
+</div>
+
+<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+
+<script src="assets/quiz.js" defer></script>
+</body>
+</html>
